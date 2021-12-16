@@ -9,6 +9,8 @@ from dash.dependencies import Input, Output, State
 import pandas as pd
 from palmerpenguins import load_penguins
 import dash_bootstrap_components as dbc
+import base64
+import io
 
 
 app = dash.Dash(
@@ -18,12 +20,12 @@ app = dash.Dash(
 
 # assume you have a "long-form" data frame
 # see https://plotly.com/python/px-arguments/ for more options
-df = load_penguins()
+penguins = load_penguins()
 
 app.layout = html.Div(
     className='container-fluid',
     children=[
-        dcc.Store(id='inp'),
+        dcc.Store(id='inp', data=penguins.to_dict('records')),
         html.H2('Aggregator'),
         html.Div(
             className='row',
@@ -35,12 +37,14 @@ app.layout = html.Div(
                             dbc.CardHeader('Input data'),
                             dbc.CardBody([
                                 dcc.Upload(
-                                    dbc.Button('Upload CSV File'),
+                                    dbc.Button('Upload CSV File', className='btn btn-secondary'),
                                     id='upload-inp'
                                 ),      
                                 html.P(
-                                    html.I('No file loaded, using penguins as default', id='upload-status'),
-                                )
+                                    html.I('No file loaded, using penguins as default', id='upload-status')
+                                ),
+                                dbc.Button('Download CSV File', className='btn btn-secondary', id='download-btn'),
+                                dcc.Download(id='download-inp')
                             ])
                         ]),
                         dbc.Card([
@@ -58,9 +62,7 @@ app.layout = html.Div(
                     children=[
                         html.H3('Input data'),
                         dash_table.DataTable(
-                            id='table',
-                            columns=[{'name': i, 'id': i} for i in df.columns],
-                            data=df.to_dict('records'),
+                            id='table-inp',
                             page_size=10,
                             sort_action='native'
                         ),
@@ -76,11 +78,47 @@ app.layout = html.Div(
 @app.callback(Output('upload-status', 'children'),
               Input('upload-inp', 'filename'),
               prevent_initial_call=True)
-def update_name(name):
+def update_input_file_name(name):
     return name
 
-#@app.callback(Output('inp', 'data'),
-#              Input('upload-inp', 'content'))
+@app.callback(Output('inp', 'data'),
+              Input('upload-inp', 'contents'),
+              prevent_initial_call=True)
+def parse_input_file_contents(contents):
+
+    try:
+        # decode content to DataFrame
+        content_type, content_string = contents.split(',')
+        decoded = base64.b64decode(content_string)
+
+        df = pd.read_csv(
+            io.StringIO(decoded.decode('utf-8'))  
+        )
+    except Exception as e:
+        print(e)
+        df = pd.DataFrame()
+
+    # serilize DataFrame to storage
+    return df.to_dict('records')
+
+@app.callback(
+    Output('download-inp', 'data'),
+    Input('download-btn', 'n_clicks'),
+    State('inp', 'data'),
+    prevent_initial_call=True,
+)
+def func(n_clicks, data):
+    df = pd.DataFrame.from_dict(data)
+    return dcc.send_data_frame(df.to_csv, 'dowload-inp.csv', index=False)
+
+@app.callback(Output('table-inp', 'columns'),
+              Output('table-inp', 'data'),
+              Input('inp', 'data'))
+def update_table_inp(data):
+
+    # data is a dict serialization of the DataFrame
+    cols = [{'name': i, 'id': i} for i in data[0].keys()]
+    return cols, data
 
 
 if __name__ == '__main__':
