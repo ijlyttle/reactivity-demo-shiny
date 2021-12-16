@@ -5,6 +5,7 @@ import dash
 from dash import dash_table
 from dash import html
 from dash import dcc
+from dash.dependencies import Input, Output, State
 import pandas as pd
 from palmerpenguins import load_penguins
 import dash_bootstrap_components as dbc
@@ -22,6 +23,7 @@ df = load_penguins()
 app.layout = html.Div(
     className='container-fluid',
     children=[
+        dcc.Store(id='inp'),
         html.H2('Aggregator'),
         html.Div(
             className='row',
@@ -32,7 +34,13 @@ app.layout = html.Div(
                         dbc.Card([
                             dbc.CardHeader('Input data'),
                             dbc.CardBody([
-                                  dcc.Upload(dbc.Button('Upload CSV File'))
+                                dcc.Upload(
+                                    dbc.Button('Upload CSV File'),
+                                    id='upload-inp'
+                                ),      
+                                html.P(
+                                    html.I('No file loaded, using penguins as default', id='upload-status'),
+                                )
                             ])
                         ]),
                         dbc.Card([
@@ -63,7 +71,17 @@ app.layout = html.Div(
             ]
         )
     ]
-)
+) 
+
+@app.callback(Output('upload-status', 'children'),
+              Input('upload-inp', 'filename'),
+              prevent_initial_call=True)
+def update_name(name):
+    return name
+
+#@app.callback(Output('inp', 'data'),
+#              Input('upload-inp', 'content'))
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
