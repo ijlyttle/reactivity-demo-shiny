@@ -18,6 +18,8 @@ app = dash.Dash(
     external_stylesheets=[dbc.themes.BOOTSTRAP]
 )
 
+agg_function_choices = ['mean', 'min', 'max']
+
 # assume you have a "long-form" data frame
 # see https://plotly.com/python/px-arguments/ for more options
 penguins = load_penguins()
@@ -49,7 +51,20 @@ app.layout = html.Div(
                         ]),
                         dbc.Card([
                             dbc.CardHeader('Aggregation'),
-                            dbc.CardBody()
+                            dbc.CardBody([
+                                dbc.Label('Grouping columns'),
+                                dcc.Dropdown(id='cols-group', multi=True),
+                                dbc.Label('Aggregation columns'),
+                                dcc.Dropdown(id='cols-agg', multi=True),
+                                dbc.Label('Aggregation function'),
+                                dbc.Select(
+                                    id='func-agg',
+                                    options=[{'label': i, 'value': i} for i in agg_function_choices],
+                                    value=agg_function_choices[0]
+                                ),
+                                html.Hr(),
+                                dbc.Button('Submit', className='btn btn-secondary', id='button-agg')
+                            ])
                         ]),
                         dbc.Card([
                             dbc.CardHeader('Aggregated data'),
@@ -115,11 +130,23 @@ def func(n_clicks, data):
               Output('table-inp', 'data'),
               Input('inp', 'data'))
 def update_table_inp(data):
-
     # data is a dict serialization of the DataFrame
     cols = [{'name': i, 'id': i} for i in data[0].keys()]
     return cols, data
 
+@app.callback(Output('cols-group', 'options'),
+              Input('inp', 'data'))
+def update_cols_group(data):
+    df = pd.DataFrame.from_dict(data)
+    col_names = df.select_dtypes(include='object').columns.to_list()
+    return [{'label': i, 'value': i} for i in col_names]
+
+@app.callback(Output('cols-agg', 'options'),
+              Input('inp', 'data'))
+def update_cols_agg(data):
+    df = pd.DataFrame.from_dict(data)
+    col_names = df.select_dtypes(include='number').columns.to_list()
+    return [{'label': i, 'value': i} for i in col_names]
 
 if __name__ == '__main__':
     app.run_server(debug=True)
