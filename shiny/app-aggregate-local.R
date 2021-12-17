@@ -4,6 +4,8 @@ library("shiny")
 # global functions
 # ------------------- 
 
+agg_function_choices <- c("mean", "min", "max")
+
 # Functions created outside of reactive environment, making it easier:
 #   - to test
 #   - to migrate to a package
@@ -25,6 +27,11 @@ cols_category <- function(df) {
 # make the aggregation
 group_aggregate <- function(df, str_group, str_agg, str_fn_agg) {
 
+  # safeguard the aggregation function
+  stopifnot(
+    str_fn_agg %in% agg_function_choices
+  )
+  
   # get the aggregation function
   func <- get(str_fn_agg)
   
@@ -115,7 +122,7 @@ ui <- fluidPage(
         selectizeInput(
           inputId = "func_agg",
           label = "Aggregation function",
-          choices = c("mean", "min", "max"),
+          choices = agg_function_choices,
           multiple = FALSE
         ),
         actionButton(
