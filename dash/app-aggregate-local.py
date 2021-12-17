@@ -28,6 +28,7 @@ app.layout = html.Div(
     className='container-fluid',
     children=[
         dcc.Store(id='inp', data=penguins.to_dict('records')),
+        dcc.Store(id='agg', data=[]),
         html.H2('Aggregator'),
         html.Div(
             className='row',
@@ -45,7 +46,7 @@ app.layout = html.Div(
                                 html.P(
                                     html.I('No file loaded, using penguins as default', id='upload-status')
                                 ),
-                                dbc.Button('Download CSV File', className='btn btn-secondary', id='download-btn'),
+                                dbc.Button('Download CSV File', className='btn btn-secondary', id='download-btn-inp'),
                                 dcc.Download(id='download-inp')
                             ])
                         ]),
@@ -68,7 +69,10 @@ app.layout = html.Div(
                         ]),
                         dbc.Card([
                             dbc.CardHeader('Aggregated data'),
-                            dbc.CardBody()
+                            dbc.CardBody([
+                                dbc.Button('Download CSV File', className='btn btn-secondary', id='download-btn-agg'),
+                                dcc.Download(id='download-agg')
+                            ])
                         ])
                     ]
                 ),
@@ -82,7 +86,12 @@ app.layout = html.Div(
                             sort_action='native'
                         ),
                         html.Hr(),
-                        html.H3('Aggregated data')
+                        html.H3('Aggregated data'),
+                        dash_table.DataTable(
+                            id='table-agg',
+                            page_size=10,
+                            sort_action='native'
+                        ),
                     ]
                 )
             ]
@@ -118,13 +127,13 @@ def parse_input_file_contents(contents):
 
 @app.callback(
     Output('download-inp', 'data'),
-    Input('download-btn', 'n_clicks'),
+    Input('download-btn-inp', 'n_clicks'),
     State('inp', 'data'),
     prevent_initial_call=True,
 )
 def func(n_clicks, data):
     df = pd.DataFrame.from_dict(data)
-    return dcc.send_data_frame(df.to_csv, 'dowload-inp.csv', index=False)
+    return dcc.send_data_frame(df.to_csv, 'download-inp.csv', index=False)
 
 @app.callback(Output('table-inp', 'columns'),
               Output('table-inp', 'data'),
@@ -147,6 +156,53 @@ def update_cols_agg(data):
     df = pd.DataFrame.from_dict(data)
     col_names = df.select_dtypes(include='number').columns.to_list()
     return [{'label': i, 'value': i} for i in col_names]
+
+@app.callback(Output('agg', 'data'),
+              Input('button-agg', 'n_clicks'),
+              State('inp', 'data'),
+              State('cols-group', 'value'),
+              State('cols-agg', 'value'),
+              State('func-agg', 'value'),
+              prevent_initial_call=True)
+def aggregate(n_clicks, data, cols_group, cols_agg, func_agg):
+    # create DataFrame
+    df = pd.DataFrame.from_dict(data)
+
+    if (not cols_group is None):
+        df = df.groupby(cols_group)
+
+    if (cols_agg is None or len(cols_agg) == 0):
+        return []
+    
+    dict_agg = {}
+    for col in cols_agg:
+        dict_agg[col] = func_agg
+    
+    # aggregate DataFrame
+    df = df.agg(dict_agg).reset_index()
+
+    # serialize DataFrame
+    return df.to_dict('records')
+
+@app.callback(Output('table-agg', 'columns'),
+              Output('table-agg', 'data'),
+              Input('agg', 'data'))
+def update_table_agg(data):
+    # data is a dict serialization of the DataFrame
+    cols = []
+    if (len(data) > 0):
+        cols = [{'name': i, 'id': i} for i in data[0].keys()]
+    return cols, data
+
+@app.callback(
+    Output('download-agg', 'data'),
+    Input('download-btn-agg', 'n_clicks'),
+    State('agg', 'data'),
+    prevent_initial_call=True,
+)
+def func(n_clicks, data):
+    df = pd.DataFrame.from_dict(data)
+    return dcc.send_data_frame(df.to_csv, 'download-agg.csv', index=False)
 
 if __name__ == '__main__':
     app.run_server(debug=True)
