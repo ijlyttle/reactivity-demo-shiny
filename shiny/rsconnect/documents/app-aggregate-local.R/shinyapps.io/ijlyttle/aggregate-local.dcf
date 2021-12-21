@@ -1,0 +1,14 @@
+name: aggregate-local
+title: aggregate-local
+username:
+account: ijlyttle
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5359576
+bundleId: 5398392
+url: https://ijlyttle.shinyapps.io/aggregate-local/
+when: 1640115703.3013
+lastSyncTime: 1640115703.30131
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: aggregate-service.R
