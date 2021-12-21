@@ -164,7 +164,7 @@ server <- function(input, output, session) {
     updateSelectizeInput(
       session,
       inputId = "cols_group",
-      choices = cols_category(parse_inp())
+      choices = cols_category(inp())
     )
   }) 
   
@@ -172,14 +172,14 @@ server <- function(input, output, session) {
     updateSelectizeInput(
       session,
       inputId = "cols_agg",
-      choices = cols_number(parse_inp())
+      choices = cols_number(inp())
     )
   })
 
   # -------------------  
   # reactive values
   # -------------------  
-  parse_inp <- 
+  inp <- 
     reactive({
      
       # use palmer penguins as default
@@ -191,10 +191,10 @@ server <- function(input, output, session) {
     }) |>
     bindEvent(input$upload_inp, ignoreNULL = FALSE, ignoreInit = FALSE)
 
-  aggregate <- 
+  agg <- 
     reactive({
       group_aggregate(
-        parse_inp(), 
+        inp(), 
         str_group = input$cols_group, 
         str_agg = input$cols_agg, 
         str_fn_agg = input$func_agg
@@ -205,18 +205,18 @@ server <- function(input, output, session) {
   # -------------------   
   # outputs
   # -------------------   
-  output$table_inp <- DT::renderDT(parse_inp())
+  output$table_inp <- DT::renderDT(inp())
   
   output$download_inp <- downloadHandler(
     filename = \() glue::glue("data-input-{Sys.Date()}.csv"),
-    content = \(file) readr::write_csv(parse_inp(), file)
+    content = \(file) readr::write_csv(inp(), file)
   )
   
-  output$table_agg <- DT::renderDT(aggregate())
+  output$table_agg <- DT::renderDT(agg())
   
   output$download_agg <- downloadHandler(
     filename = \() glue::glue("data-aggregated-{Sys.Date()}.csv"),
-    content = \(file) readr::write_csv(aggregate(), file)
+    content = \(file) readr::write_csv(agg(), file)
   )
  
 }
