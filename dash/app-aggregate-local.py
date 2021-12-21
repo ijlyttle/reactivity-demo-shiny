@@ -131,7 +131,7 @@ def parse_input_file_contents(contents):
     State('inp', 'data'),
     prevent_initial_call=True,
 )
-def func(n_clicks, data):
+def download_inp(n_clicks, data):
     df = pd.DataFrame.from_dict(data)
     return dcc.send_data_frame(df.to_csv, 'download-inp.csv', index=False)
 
@@ -200,7 +200,7 @@ def update_table_agg(data):
     State('agg', 'data'),
     prevent_initial_call=True,
 )
-def func(n_clicks, data):
+def download_agg(n_clicks, data):
     df = pd.DataFrame.from_dict(data)
     return dcc.send_data_frame(df.to_csv, 'download-agg.csv', index=False)
 
