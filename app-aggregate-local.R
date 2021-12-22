@@ -8,7 +8,7 @@ library("shiny")
 #   - to test
 #   - to migrate to a package
 
-source("./aggregate-local.R")
+source("./R/aggregate-local.R")
 
 # -------------
 ui <- fluidPage(
