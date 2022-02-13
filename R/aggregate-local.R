@@ -14,11 +14,12 @@ cols_category <- function(df) {
 }
 
 # make the aggregation
-group_aggregate <- function(df, str_group, str_agg, str_fn_agg) {
+group_aggregate <- function(df, str_group, str_agg, str_fn_agg, 
+                            str_fn_choices = agg_function_choices) {
   
   # safeguard the aggregation function
   stopifnot(
-    str_fn_agg %in% agg_function_choices
+    str_fn_agg %in% str_fn_choices
   )
   
   # get the aggregation function
