@@ -80,7 +80,7 @@ ui <- fluidPage(
 server <- function(input, output, session) {
 
   # -------------------  
-  # inputs
+  # input observers
   # -------------------  
   observe({
     # this runs whenever the parsed input data changes
@@ -100,7 +100,7 @@ server <- function(input, output, session) {
   })
 
   # -------------------  
-  # reactive values
+  # reactive expressions
   # -------------------  
   inp <- 
     reactive({
@@ -116,6 +116,9 @@ server <- function(input, output, session) {
 
   agg <- 
     reactive({
+      
+      req(input$func_agg %in% agg_function_choices)
+      
       group_aggregate(
         inp(), 
         str_group = input$cols_group, 
