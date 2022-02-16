@@ -15,7 +15,19 @@ ui <- fluidPage(
   titlePanel("Aggregator"),
   fluidRow(
     column(
-      width = 4,
+      width = 4, 
+      wellPanel(
+        h3("Input data"),
+        fileInput(
+          inputId = "upload_inp",
+          label = "Upload CSV file",
+          placeholder = "No file selected: using Palmer Penguins"
+        ),
+        downloadButton(
+          outputId = "download_inp",
+          label = "Download CSV file"
+        )
+      ),
       wellPanel(
         h3("Aggregation"),
         selectizeInput(
@@ -40,6 +52,13 @@ ui <- fluidPage(
           inputId = "button",
           label = "Submit"
         )
+      ),
+      wellPanel(
+        h3("Aggregated data"),
+        downloadButton(
+          outputId = "download_agg",
+          label = "Download CSV file"
+        )       
       )
     ),
     column(
@@ -59,7 +78,7 @@ ui <- fluidPage(
 
 # ------------------- 
 server <- function(input, output, session) {
-  
+
   # -------------------  
   # input observers
   # -------------------  
@@ -79,15 +98,22 @@ server <- function(input, output, session) {
       choices = cols_number(inp())
     )
   })
-  
+
   # -------------------  
   # reactive expressions
   # -------------------  
   inp <- 
-    reactive({ 
-      return(palmerpenguins::penguins)
-    }) 
-  
+    reactive({
+     
+      # use palmer penguins as default
+      if (is.null(input$upload_inp)) {
+        return(palmerpenguins::penguins)
+      }
+     
+      readr::read_csv(input$upload_inp$datapath, show_col_types = FALSE)
+    }) |>
+    bindEvent(input$upload_inp, ignoreNULL = FALSE, ignoreInit = FALSE)
+
   agg <- 
     reactive({
       
@@ -101,14 +127,24 @@ server <- function(input, output, session) {
       )
     }) |>
     bindEvent(input$button, ignoreNULL = TRUE, ignoreInit = TRUE)
-  
+
   # -------------------   
   # outputs
   # -------------------   
   output$table_inp <- DT::renderDT(inp())
   
+  output$download_inp <- downloadHandler(
+    filename = \() glue::glue("data-input-{Sys.Date()}.csv"),
+    content = \(file) readr::write_csv(inp(), file)
+  )
+  
   output$table_agg <- DT::renderDT(agg())
-
+  
+  output$download_agg <- downloadHandler(
+    filename = \() glue::glue("data-aggregated-{Sys.Date()}.csv"),
+    content = \(file) readr::write_csv(agg(), file)
+  )
+ 
 }
 
 # ------------------- 
