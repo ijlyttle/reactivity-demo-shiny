@@ -7,7 +7,6 @@ library("shiny")
 # created outside of reactive environment, making it easier:
 #   - to test
 #   - to migrate to a package
-
 source("./R/aggregate-local.R")
 
 # -------------
@@ -85,7 +84,7 @@ server <- function(input, output, session) {
   # -------------------  
   inp <- 
     reactive({ 
-      return(palmerpenguins::penguins)
+      palmerpenguins::penguins
     }) 
   
   agg <- 

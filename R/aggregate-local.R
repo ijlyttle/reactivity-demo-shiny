@@ -17,7 +17,7 @@ cols_category <- function(df) {
 group_aggregate <- function(df, str_group, str_agg, str_fn_agg, 
                             str_fn_choices = agg_function_choices) {
   
-  # safeguard the aggregation function
+  # validate the aggregation function
   stopifnot(
     str_fn_agg %in% str_fn_choices
   )
